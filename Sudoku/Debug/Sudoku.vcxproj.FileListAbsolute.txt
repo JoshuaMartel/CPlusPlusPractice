@@ -1,0 +1,2 @@
+C:\Users\Joshua Martel\source\repos\Sudoku\Debug\Sudoku.exe
+C:\Users\Joshua Martel\source\repos\Sudoku\Debug\Sudoku.pdb
