@@ -20,6 +20,7 @@ public:
     void NewBoard();
     void PlayerBoard(int dif);
     void DisplayRefBoard();
+    void ResetBoard();
 
     void CreateReferenceBoard();
 
@@ -120,9 +121,26 @@ void Board::DisplayRefBoard()
     }
 }
 
-void Board::ChangeTile(int row, int col, char num = '0')
+void Board::ChangeTile(int row, int col, char num = '1')
 {
-    rowColBoard[row][col] = num;
+    // for debugging
+    //cout <<endl << row << " " << col << " " << num << endl; 
+    try {
+        if (referenceBoard[row-1][col-1] == '*')
+        {
+            cout << "You cannot change that tile." << endl;
+        }
+        else
+        {
+            rowColBoard[row-1][col-1] = num;
+        }
+    }
+    catch (...)
+    {
+        cout << "Error in ChangeTile" << endl;
+    }
+
+    
 }
 
 bool Board::MoveIsLegal(char const board[][9], int row, int col, char tile)
@@ -196,12 +214,23 @@ bool Board::IsSolved()
     return true;
 }
 
+void Board::ResetBoard() 
+{
+    for (int i = 0; i < 9; ++i)
+    {
+        for (int j = 0; j < 9; ++j)
+        {
+            rowColBoard[i][j] = '0';
+        }
+    }
+}
+
 void Board::NewBoard()
 {
     
     
     char tile = '0';
-    int numIters = 0; //to prevent an infinite loop
+    int numIterations = 0;  //Prevents an infinite loop
     //Main solving loop
     for (int i = 0; i < 9; ++i)
     {
@@ -216,6 +245,7 @@ void Board::NewBoard()
         int j = 0;
         while(!tilesArr.empty())
         {
+            numIterations++;
             //Error handling
             if (iterTile == tilesArr.end()) {
                 iterTile -= 1;
@@ -248,6 +278,15 @@ void Board::NewBoard()
                 rowColBoard[i][k] = '0';
             }
             i--;
+        }
+        // Essentially forces a complete restart of the board building -
+        // if the building takes too long
+        if (numIterations >= 10000) 
+        {
+            //cout << "\n**Restarting Building Process**\n\n"; //For debugging
+            i = 0; j = 0; numIterations = 0;
+            ResetBoard();
+            
         }
     }
     
@@ -295,8 +334,7 @@ void GreetPlayer();
 void Instructions();
 int GetPlayerInput();
 int * GetMove();
-void DoMove(Board board, int row, int col, char tile);
-void UndoMove(Board board, int row, int col, char tile);
+bool DoMove(Board board, int row, int col, char tile);
 int GetDifficulty();
 bool MoveIsLegal(const Board board,int row, int col, char tile);
 
@@ -305,13 +343,19 @@ bool MoveIsLegal(const Board board,int row, int col, char tile);
 
 int main()
 {
-    /*GreetPlayer();
+    ///*
+    GreetPlayer();
     Menu();
 
-    int input;
+    int input,row,col,index,dif;
+    string sInput;
+    dif = 0; index = 0;
+    char digits[] = { '0','1','2','3', '4','5','6','7','8','9' };
+    char tile;
     int * pMove;
-    bool testNewGame = false;
-    const enum {INSTR,MOVE,UNDO,NEWGAME,ISSOLVED,EXIT,MENU};
+    Board board;
+    bool testGameRunning = false;
+    const enum {INSTR,MOVE,NEWGAME,ISSOLVED,EXIT,MENU};
 
     input = GetPlayerInput();
 
@@ -323,38 +367,72 @@ int main()
             Instructions();
             break;
 
-
         case MOVE:
-            if (!testNewGame) {
+            if (!testGameRunning) {
                 cout << "You have not started a game!" << "\n";
             }
             else {
-                pMove = GetMove();
+                pMove = GetMove(); // returns an array containing the positon as a row and column integer and the tile value
+                col = *pMove;
+                pMove++;
+                row = *pMove;
+                pMove++;
+                index = (*pMove);
+                tile =  digits[index];
 
+                board.ChangeTile(row, col, tile); //if the player tries to change a starting tile, no tile will change
             }
-            break;
-        case UNDO:
             break;
 
         case NEWGAME:
-            Board board;
+            if (testGameRunning) board.ResetBoard();
             board.NewBoard();
-            int dif = GetDifficulty();
+            dif = GetDifficulty();
             board.PlayerBoard(dif);
-            board.DisplayBoard();
+            board.CreateReferenceBoard();
+            testGameRunning = true;
             break;
 
         case ISSOLVED:
+            if (testGameRunning) // Test if the player has started a game
+            {             
+                if (board.IsSolved())
+                {
+                    cout << "Congradulations! You have solved the puzzle." << endl;
+                    cout << "Want to play again? If so, type 2 for New Game, or 4 for to Exit." << "\n\n";
+                }
+                else
+                {
+                    cout << "Sorry, your solution is wrong." << "\n\n";
+                }
+            }
+            else 
+            {
+                cout << "You have not started a game!" << "\n";
+            }
+            break;
 
         case EXIT:
             break;
+
         case MENU:
-            break;
             Menu();
+            break;
+
+        default:
+            Menu();
+            break;
         }
-    }*/
+
+        if (testGameRunning) //If a game is running, show board
+        {
+            board.DisplayBoard();
+        }
+        input = GetPlayerInput(); //Obtain player input before starting a new iteration
+    }
+    //*/
     
-    // /*
+     /*
     int dif = 3;
     Board board;
     board.NewBoard();
@@ -370,6 +448,34 @@ int main()
     }
     board.CreateReferenceBoard();
     board.DisplayRefBoard();
+
+    Board board2;
+    board2.ChangeTile(1, 1, '1');
+    board2.DisplayBoard();
+
+    /*int input, row, col, index;
+    string sInput;
+    dif = 0; index = 0;
+    char digits[] = { '0','1','2','3', '4','5','6','7','8','9' };
+    char tile;
+    int* pMove;
+    cin >> input;
+    cout << "Entering Loop." << endl;
+    while (input != 0)
+    {
+        cin >> input;
+        pMove = GetMove(); // returns an array containing the positon as a row and column integer and the tile value
+        row = *pMove;
+        pMove++;
+        col = *pMove;
+        pMove++;
+        index = (*pMove);
+        tile = digits[index];
+
+        board.ChangeTile(row, col, tile);
+        board.DisplayBoard();
+
+    }*/
     //*/
 
     return 0;
@@ -386,11 +492,10 @@ void Menu()
     cout << "Type each number for the following" << "\n\n";
     cout << "0 - Game instructions" << endl;
     cout << "1 - Make a move" << endl;
-    cout << "2 - Undo a move" << endl;
-    cout << "3 - Start a new game" << endl;
-    cout << "4 - Check if puzzle is solved" << endl;
-    cout << "5 - Exit" << endl;
-    cout << "6 - Menu" << endl;
+    cout << "2 - Start a new game" << endl;
+    cout << "3 - Check if puzzle is solved" << endl;
+    cout << "4 - Exit" << endl;
+    cout << "5 - Menu" << endl;
 }
 
 void Instructions()
@@ -408,25 +513,33 @@ void Instructions()
 int GetPlayerInput()
 {
     int input;
-    const enum { INSTR, MOVE, UNDO, NEWGAME, ISSOLVED, EXIT, MENU };
-    cin >> input;
-    switch (input)
+    string sInput;
+    const enum { INSTR, MOVE, NEWGAME, ISSOLVED, EXIT, MENU };
+    cin >> sInput;
+    try
     {
-    case INSTR:
-        return INSTR;
-    case MOVE:
-        return MOVE;
-    case UNDO:
-        return UNDO;
-    case NEWGAME:
-        return NEWGAME;
-    case ISSOLVED:
-        return ISSOLVED;
-    case EXIT:
-        return EXIT;
-    case MENU:
-        return MENU;
-    default:
+        input = stoi(sInput);
+        switch (input)
+        {
+        case INSTR:
+            return INSTR;
+        case MOVE:
+            return MOVE;
+        case NEWGAME:
+            return NEWGAME;
+        case ISSOLVED:
+            return ISSOLVED;
+        case EXIT:
+            return EXIT;
+        case MENU:
+            return MENU;
+        default:
+            cout << "That is not an option." << "\n\n";
+            return MENU;
+        }
+    }
+    catch (...)
+    {
         cout << "That is not an option." << "\n\n";
         return MENU;
     }
@@ -439,59 +552,80 @@ int GetDifficulty()
     cout << "2 - Medium" << endl;
     cout << "3 - Hard" << endl;
     int dif = 0;
+    string sDif;
+    cin >> sDif;
 
-    cin >> dif;
-    switch (dif)
+    try
     {
-    case 1:
-        cout << "You chose Easy." << "\n\n";
-        break;
-    case 2:
-        cout << "You chose Medium." << "\n\n";
-        break;
-    case 3:
-        cout << "You chose Hard. Good Luck." << "\n\n";
-        break;
-    default:
-        cout << "That is not an option" << "\n\n";
-        //return 4 to indicate an error
-        dif = 4;
-        break;
+        dif = stoi(sDif);
+        
+        switch (dif)
+        {
+        case 1:
+            cout << "You chose Easy." << "\n\n";
+            break;
+        case 2:
+            cout << "You chose Medium." << "\n\n";
+            break;
+        case 3:
+            cout << "You chose Hard. Good Luck." << "\n\n";
+            break;
+        default: //If player chooses an invalid input, start an easy game
+            cout << "That is not an option. Starting an \"Easy\" level game." << "\n\n";
+            dif = 1;
+            break;
+        }
     }
+    catch (...)
+    {
+        cout << "That is not an option. Starting an \"Easy\" level game." << "\n\n";
+        return 1;
+    }
+    
     return dif;
 }
 
 int * GetMove()
 {
+    string sPosition, sNum;
     int position, num;
     int static arr[3] = { 0,0,0 };
-
-    cin >> position;
-    cin >> num;
     
+    cout << "Enter position:\n";
+
+    cin >> sPosition;
+
+    cout << "Enter number:\n";
+    cin >> sNum;
+
+    try
+    {
+        position = stoi(sPosition);
+        num      = stoi(sNum);
+        if (num >= 10 || position >= 100) {
+            throw 20;
+        }
+    }
+    catch (...)
+    {
+        cout << "Invalid input." << endl;
+        return arr;
+    }
+
     arr[0] = position % 10;
-    arr[1] = position % 100;
+    arr[1] = (position - position % 10)/10;
     arr[2] = num;
 
     return arr;
 }
-
-void DoMove(Board board, int row, int col, char tile)
+/*
+bool DoMove(Board board, int row, int col, char tile)
 {
+    if board.
     board.ChangeTile(row, col, tile);
 }
+*/
 
-int UndoMove()
-{
-    int undo;
-    cin >> undo;
-    return undo;
-}
-
-void UndoMove(Board board, int row, int col, char tile)
-{
-
-}
 
 
 
